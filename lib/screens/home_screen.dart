@@ -453,6 +453,14 @@ class _ReportCard extends StatelessWidget {
     }
   }
 
+  Color get _statusColor {
+    switch (report.status) {
+      case ReportStatus.open:       return const Color(0xFF4CAF50);
+      case ReportStatus.inProgress: return const Color(0xFFFF9800);
+      case ReportStatus.closed:     return const Color(0xFF757575);
+    }
+  }
+
   Color get _typeColor {
     switch (report.type) {
       case ReportType.hazard:     return const Color(0xFFF44336);
@@ -582,10 +590,58 @@ class _ReportCard extends StatelessWidget {
                     // Description
                     Text(
                       report.description,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 12, color: Colors.grey, height: 1.4),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    // Bottom row: status badge + sub-status
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: _statusColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            report.status.label,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        if (report.subStatus != null) ...[
+                          const SizedBox(width: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _statusColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _statusColor.withOpacity(0.4),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              report.subStatus!.label,
+                              style: TextStyle(
+                                  color: _statusColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                        const Spacer(),
+                        Icon(Icons.chevron_right,
+                            color: Colors.grey.shade400, size: 16),
+                      ],
                     ),
                   ],
                 ),

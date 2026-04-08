@@ -282,103 +282,127 @@ class _NewsScreenState extends State<NewsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Image with title overlay ────────────────────────────
+              // ── Image: category top-left, title + author + date bottom ──
               Stack(
                 children: [
                   SizedBox(
                     width: double.infinity,
-                    height: 185,
+                    height: 200,
                     child: CachedNetworkImage(
                       imageUrl: article.imageUrl,
                       fit: BoxFit.cover,
                       placeholder: (_, __) => Container(
                         color: const Color(0xFF37474F),
                         child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white38, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                              color: Colors.white38, strokeWidth: 2),
                         ),
                       ),
                       errorWidget: (_, __, ___) => Container(
                         color: const Color(0xFF37474F),
-                        child: const Icon(Icons.image, color: Colors.white38, size: 40),
+                        child: const Icon(Icons.image,
+                            color: Colors.white38, size: 40),
                       ),
                     ),
                   ),
-                  // Gradient + title
+
+                  // Category badge — pojok kiri atas
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 9, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: catColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        article.category,
+                        style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+
+                  // Gradient bawah + judul + author + tanggal
                   Positioned(
                     left: 0, right: 0, bottom: 0,
                     child: Container(
-                      padding: const EdgeInsets.fromLTRB(12, 50, 12, 12),
+                      padding: const EdgeInsets.fromLTRB(12, 60, 12, 10),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
-                          colors: [Colors.black.withOpacity(0.88), Colors.transparent],
+                          colors: [
+                            Colors.black.withOpacity(0.88),
+                            Colors.transparent
+                          ],
                         ),
                       ),
-                      child: Text(
-                        article.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          height: 1.3,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Judul
+                          Text(
+                            article.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          // Author + date row
+                          Row(children: [
+                            const Icon(Icons.person_outline,
+                                size: 12, color: Colors.white70),
+                            const SizedBox(width: 4),
+                            Text(
+                              article.author,
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                                width: 3,
+                                height: 3,
+                                decoration: const BoxDecoration(
+                                    color: Colors.white38,
+                                    shape: BoxShape.circle)),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.calendar_today_outlined,
+                                size: 11, color: Colors.white70),
+                            const SizedBox(width: 4),
+                            Text(
+                              article.date,
+                              style: const TextStyle(
+                                  fontSize: 11, color: Colors.white70),
+                            ),
+                          ]),
+                        ],
                       ),
                     ),
                   ),
                 ],
               ),
 
-              // ── Meta ────────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_outline, size: 14, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      article.author,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(width: 3, height: 3,
-                        decoration: BoxDecoration(color: Colors.grey.shade400, shape: BoxShape.circle)),
-                    const SizedBox(width: 6),
-                    Text(article.date, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: catColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        article.category,
-                        style: TextStyle(fontSize: 10, color: catColor, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
               // ── Excerpt ─────────────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
-                child: RichText(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 14),
+                child: Text(
+                  article.excerpt,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  text: TextSpan(
-                    style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.5),
-                    children: [
-                      TextSpan(
-                        text: '${article.title.split(',').first}  ',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-                      ),
-                      TextSpan(text: article.excerpt),
-                    ],
-                  ),
+                  style: const TextStyle(
+                      fontSize: 12, color: Colors.black54, height: 1.5),
                 ),
               ),
             ],

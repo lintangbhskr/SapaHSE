@@ -3,8 +3,7 @@ import '../data/dummy_data.dart';
 import '../models/report.dart';
 import 'report_detail_screen.dart';
 
-// ── Dummy current user (same as profile) ─────────────────────────────────────
-const String _currentUser = 'Noor Lintang Bhaskara';
+
 
 // ── Dummy announcements ───────────────────────────────────────────────────────
 class Announcement {
@@ -54,8 +53,9 @@ final List<Announcement> dummyAnnouncements = [
   ),
 ];
 
-// ── Inbox item type ───────────────────────────────────────────────────────────
-enum _InboxTab { all, personal, announcement, unread }
+// ── Inbox tab enums ───────────────────────────────────────────────────────────
+enum _MainTab { personal, announcement }
+enum _SubFilter { all, unread }
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -65,40 +65,26 @@ class InboxScreen extends StatefulWidget {
 }
 
 class _InboxScreenState extends State<InboxScreen> {
-  _InboxTab _activeTab = _InboxTab.all;
+  _MainTab _activeMain = _MainTab.personal;
+  _SubFilter _activeFilter = _SubFilter.all;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // Track read report IDs (in-memory)
+  // Track read IDs (in-memory)
   final Set<String> _readReportIds = {};
   final Set<String> _readAnnouncementIds = {};
 
-  // ── Filtered lists per tab ─────────────────────────────────────────────────
-  List<Report> get _allReports => dummyReports;
-
-  List<Report> get _personalReports =>
-      dummyReports.where((r) => r.reportedBy == _currentUser).toList();
-
-  List<Report> get _unreadReports =>
-      dummyReports.where((r) => !_readReportIds.contains(r.id)).toList();
-
-  // Active list based on tab + search
-  List<Report> get _activeReports {
-    List<Report> base;
-    switch (_activeTab) {
-      case _InboxTab.all:
-        base = _allReports;
-        break;
-      case _InboxTab.personal:
-        base = _personalReports;
-        break;
-      case _InboxTab.unread:
-        base = _unreadReports;
-        break;
-      default:
-        base = [];
+  // ── Filtered reports ───────────────────────────────────────────────────────
+  List<Report> get _baseReports {
+    if (_activeFilter == _SubFilter.unread) {
+      return dummyReports.where((r) => !_readReportIds.contains(r.id)).toList();
     }
+    return dummyReports;
+  }
+
+  List<Report> get _activeReports {
+    final base = _baseReports;
     if (_searchQuery.isEmpty) return base;
     final q = _searchQuery.toLowerCase();
     return base.where((r) =>
@@ -107,11 +93,21 @@ class _InboxScreenState extends State<InboxScreen> {
         r.location.toLowerCase().contains(q)).toList();
   }
 
+  // ── Filtered announcements ─────────────────────────────────────────────────
+  List<Announcement> get _baseAnnouncements {
+    if (_activeFilter == _SubFilter.unread) {
+      return dummyAnnouncements
+          .where((a) => !_readAnnouncementIds.contains(a.id))
+          .toList();
+    }
+    return dummyAnnouncements;
+  }
+
   List<Announcement> get _activeAnnouncements {
-    if (_activeTab != _InboxTab.announcement) return [];
-    if (_searchQuery.isEmpty) return dummyAnnouncements;
+    final base = _baseAnnouncements;
+    if (_searchQuery.isEmpty) return base;
     final q = _searchQuery.toLowerCase();
-    return dummyAnnouncements.where((a) =>
+    return base.where((a) =>
         a.title.toLowerCase().contains(q) ||
         a.body.toLowerCase().contains(q) ||
         a.from.toLowerCase().contains(q)).toList();
@@ -123,6 +119,10 @@ class _InboxScreenState extends State<InboxScreen> {
 
   int get _unreadAnnouncementCount =>
       dummyAnnouncements.where((a) => !_readAnnouncementIds.contains(a.id)).length;
+
+  int get _activeUnreadCount => _activeMain == _MainTab.personal
+      ? _unreadReportCount
+      : _unreadAnnouncementCount;
 
   @override
   void dispose() {
@@ -181,11 +181,10 @@ class _InboxScreenState extends State<InboxScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isAnnouncement = _activeMain == _MainTab.announcement;
     final reports = _activeReports;
     final announcements = _activeAnnouncements;
-    final isEmpty = _activeTab == _InboxTab.announcement
-        ? announcements.isEmpty
-        : reports.isEmpty;
+    final isEmpty = isAnnouncement ? announcements.isEmpty : reports.isEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F0F0),
@@ -237,48 +236,63 @@ class _InboxScreenState extends State<InboxScreen> {
 
       body: Column(
         children: [
-          // ── Tab bar ──────────────────────────────────────────────────
+          // ── Main tab: Personal | Announcement ────────────────────────
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              children: [
+                _MainTabItem(
+                  label: 'Personal',
+                  icon: Icons.person_outline,
+                  isActive: _activeMain == _MainTab.personal,
+                  badge: _unreadReportCount > 0 ? _unreadReportCount : null,
+                  onTap: () => setState(() {
+                    _activeMain = _MainTab.personal;
+                    _activeFilter = _SubFilter.all;
+                  }),
+                ),
+                const SizedBox(width: 4),
+                _MainTabItem(
+                  label: 'Announcement',
+                  icon: Icons.campaign_outlined,
+                  isActive: _activeMain == _MainTab.announcement,
+                  badge: _unreadAnnouncementCount > 0
+                      ? _unreadAnnouncementCount
+                      : null,
+                  onTap: () => setState(() {
+                    _activeMain = _MainTab.announcement;
+                    _activeFilter = _SubFilter.all;
+                  }),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Sub-filter: All | Unread ──────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _TabChip(
-                    label: 'All',
-                    isActive: _activeTab == _InboxTab.all,
-                    badge: null,
-                    onTap: () => setState(() => _activeTab = _InboxTab.all),
-                  ),
-                  const SizedBox(width: 8),
-                  _TabChip(
-                    label: 'Personal',
-                    isActive: _activeTab == _InboxTab.personal,
-                    badge: _personalReports.length,
-                    onTap: () => setState(() => _activeTab = _InboxTab.personal),
-                  ),
-                  const SizedBox(width: 8),
-                  _TabChip(
-                    label: 'Announcement',
-                    isActive: _activeTab == _InboxTab.announcement,
-                    badge: _unreadAnnouncementCount > 0
-                        ? _unreadAnnouncementCount
-                        : null,
-                    onTap: () =>
-                        setState(() => _activeTab = _InboxTab.announcement),
-                  ),
-                  const SizedBox(width: 8),
-                  _TabChip(
-                    label: 'Unread',
-                    isActive: _activeTab == _InboxTab.unread,
-                    badge: _unreadReportCount > 0 ? _unreadReportCount : null,
-                    onTap: () => setState(() => _activeTab = _InboxTab.unread),
-                  ),
-                ],
-              ),
+            child: Row(
+              children: [
+                _SubFilterChip(
+                  label: 'All',
+                  isActive: _activeFilter == _SubFilter.all,
+                  onTap: () => setState(() => _activeFilter = _SubFilter.all),
+                ),
+                const SizedBox(width: 8),
+                _SubFilterChip(
+                  label: 'Unread',
+                  isActive: _activeFilter == _SubFilter.unread,
+                  badge: _activeUnreadCount > 0 ? _activeUnreadCount : null,
+                  onTap: () =>
+                      setState(() => _activeFilter = _SubFilter.unread),
+                ),
+              ],
             ),
           ),
+
+          const Divider(height: 1),
 
           // ── Content ──────────────────────────────────────────────────
           Expanded(
@@ -288,9 +302,9 @@ class _InboxScreenState extends State<InboxScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          _activeTab == _InboxTab.announcement
+                          isAnnouncement
                               ? Icons.campaign_outlined
-                              : _activeTab == _InboxTab.unread
+                              : _activeFilter == _SubFilter.unread
                                   ? Icons.mark_email_read_outlined
                                   : Icons.inbox_outlined,
                           size: 52,
@@ -298,7 +312,7 @@ class _InboxScreenState extends State<InboxScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          _activeTab == _InboxTab.unread
+                          _activeFilter == _SubFilter.unread
                               ? 'Semua sudah dibaca!'
                               : 'Tidak ada item ditemukan',
                           style: const TextStyle(
@@ -309,11 +323,10 @@ class _InboxScreenState extends State<InboxScreen> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                    itemCount: _activeTab == _InboxTab.announcement
-                        ? announcements.length
-                        : reports.length,
+                    itemCount:
+                        isAnnouncement ? announcements.length : reports.length,
                     itemBuilder: (context, i) {
-                      if (_activeTab == _InboxTab.announcement) {
+                      if (isAnnouncement) {
                         final ann = announcements[i];
                         return _AnnouncementCard(
                           announcement: ann,
@@ -443,14 +456,95 @@ class _InboxScreenState extends State<InboxScreen> {
   }
 }
 
-// ── TAB CHIP ──────────────────────────────────────────────────────────────────
-class _TabChip extends StatelessWidget {
+// ── MAIN TAB ITEM (Personal | Announcement) ───────────────────────────────────
+class _MainTabItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isActive;
+  final int? badge;
+  final VoidCallback onTap;
+
+  const _MainTabItem({
+    required this.label,
+    required this.icon,
+    required this.isActive,
+    required this.onTap,
+    this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const blue = Color(0xFF1A56C4);
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon,
+                      size: 18,
+                      color: isActive ? blue : Colors.black38),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          isActive ? FontWeight.bold : FontWeight.w400,
+                      color: isActive ? blue : Colors.black54,
+                    ),
+                  ),
+                  if (badge != null && badge! > 0) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isActive ? blue : Colors.redAccent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$badge',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            // Active indicator
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: 2.5,
+              decoration: BoxDecoration(
+                color: isActive ? blue : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── SUB FILTER CHIP (All | Unread) ─────────────────────────────────────────────
+class _SubFilterChip extends StatelessWidget {
   final String label;
   final bool isActive;
   final int? badge;
   final VoidCallback onTap;
 
-  const _TabChip({
+  const _SubFilterChip({
     required this.label,
     required this.isActive,
     required this.onTap,
@@ -459,14 +553,19 @@ class _TabChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const blue = Color(0xFF1A56C4);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF1A56C4) : const Color(0xFFE0E0E0),
+          color: isActive ? blue.withOpacity(0.1) : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isActive ? blue : Colors.transparent,
+            width: 1.5,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -474,25 +573,26 @@ class _TabChip extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isActive ? Colors.white : Colors.black54,
+                color: isActive ? blue : Colors.black54,
               ),
             ),
             if (badge != null && badge! > 0) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
-                  color: isActive ? Colors.white : const Color(0xFF1A56C4),
+                  color: isActive ? blue : Colors.black26,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   '$badge',
-                  style: TextStyle(
-                    fontSize: 10,
+                  style: const TextStyle(
+                    fontSize: 9,
                     fontWeight: FontWeight.bold,
-                    color: isActive ? const Color(0xFF1A56C4) : Colors.white,
+                    color: Colors.white,
                   ),
                 ),
               ),

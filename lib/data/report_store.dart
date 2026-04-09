@@ -172,6 +172,7 @@ class ReportStore {
       title:       old.title,
       description: old.description,
       type:        old.type,
+      category:    old.category,
       severity:    old.severity,
       status:      newStatus,
       subStatus:   newSubStatus,

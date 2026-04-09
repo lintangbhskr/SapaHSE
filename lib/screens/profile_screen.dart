@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_screen.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -91,12 +93,105 @@ class _ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<_ProfileTab> {
   int _selectedSubTab = 0; // 0=Biodata, 1=License, 2=Certification, 3=Medical
 
+  // ── Editable profile fields ────────────────────────────────────────────────
+  String _name       = 'Noor Lintang Bhaskara';
+  String _position   = 'IT Magang';
+  String _department = 'Departemen IT';
+  String _company    = 'PT Bukit Baiduri Energi';
+
   final List<Map<String, dynamic>> _subTabs = [
     {'label': 'Biodata',       'icon': Icons.person},
     {'label': 'License',       'icon': Icons.credit_card},
     {'label': 'Certification', 'icon': Icons.workspace_premium},
     {'label': 'Medical',       'icon': Icons.medical_services},
   ];
+
+  void _showEditProfileDialog() {
+    final nameCtrl       = TextEditingController(text: _name);
+    final positionCtrl   = TextEditingController(text: _position);
+    final deptCtrl       = TextEditingController(text: _department);
+    final companyCtrl    = TextEditingController(text: _company);
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1565C0).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.edit_outlined,
+                color: Color(0xFF1565C0), size: 20),
+          ),
+          const SizedBox(width: 10),
+          const Text('Edit Profil',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        ]),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _DialogField(label: 'Nama Lengkap',   ctrl: nameCtrl,
+                  icon: Icons.person_outline),
+              const SizedBox(height: 14),
+              _DialogField(label: 'Jabatan',         ctrl: positionCtrl,
+                  icon: Icons.work_outline),
+              const SizedBox(height: 14),
+              _DialogField(label: 'Departemen',      ctrl: deptCtrl,
+                  icon: Icons.business_outlined),
+              const SizedBox(height: 14),
+              _DialogField(label: 'Perusahaan (PT)', ctrl: companyCtrl,
+                  icon: Icons.apartment_outlined),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal',
+                style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _name       = nameCtrl.text.trim().isEmpty ? _name       : nameCtrl.text.trim();
+                _position   = positionCtrl.text.trim().isEmpty ? _position   : positionCtrl.text.trim();
+                _department = deptCtrl.text.trim().isEmpty ? _department : deptCtrl.text.trim();
+                _company    = companyCtrl.text.trim().isEmpty ? _company    : companyCtrl.text.trim();
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Row(children: [
+                    Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Text('Profil berhasil diperbarui'),
+                  ]),
+                  backgroundColor: const Color(0xFF1565C0),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  margin: const EdgeInsets.all(16),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1565C0),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +202,7 @@ class _ProfileTabState extends State<_ProfileTab> {
           Container(
             width: double.infinity,
             color: const Color(0xFFF0F0F0),
-            padding: const EdgeInsets.symmetric(vertical: 24),
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
             child: Column(
               children: [
                 GestureDetector(
@@ -141,19 +236,39 @@ class _ProfileTabState extends State<_ProfileTab> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  'Noor Lintang Bhaskara',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                Text(
+                  _name,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'IT Magang, Departemen IT',
-                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                Text(
+                  '$_position, $_department',
+                  style: const TextStyle(fontSize: 13, color: Colors.black54),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'PT Bukit Baiduri Energi',
-                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                Text(
+                  _company,
+                  style: const TextStyle(fontSize: 13, color: Colors.black54),
+                ),
+                const SizedBox(height: 14),
+                // ── Edit button ─────────────────────────────────────
+                OutlinedButton.icon(
+                  onPressed: _showEditProfileDialog,
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text('Edit Profil'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF1565C0),
+                    side: const BorderSide(color: Color(0xFF1565C0), width: 1.5),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 8),
+                    textStyle: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
@@ -219,6 +334,51 @@ class _ProfileTabState extends State<_ProfileTab> {
     }
   }
 }
+
+// ── Dialog field helper ───────────────────────────────────────────────────────
+class _DialogField extends StatelessWidget {
+  final String label;
+  final TextEditingController ctrl;
+  final IconData icon;
+  const _DialogField({required this.label, required this.ctrl, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black54)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: ctrl,
+          style: const TextStyle(fontSize: 14),
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, size: 18, color: Colors.grey),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            filled: true,
+            fillColor: const Color(0xFFF8F8F8),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(
+                    color: Color(0xFF1565C0), width: 1.5)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 
 // ── BIODATA ───────────────────────────────────────────────────────────────────
 class _BiodataContent extends StatefulWidget {
@@ -446,12 +606,12 @@ class _MedicalContent extends StatelessWidget {
     final history = [
       _MedicalHistory(
         id: 'mh1',
+        patientName: 'Noor Lintang Bhaskara',
         title: 'Medical Check-Up Tahunan 2026',
         date: '10 Januari 2026',
         doctor: 'dr. Andi Wijaya, Sp.OK',
         facility: 'Klinik Pratama BBE',
-        result: 'Fit to Work',
-        resultColor: const Color(0xFF4CAF50),
+        mcuStatus: McuStatus.fitToWork,
         notes: 'Semua parameter dalam batas normal. Tekanan darah 120/80 mmHg, '
             'gula darah puasa 92 mg/dL, kolesterol total 180 mg/dL. '
             'Disarankan olahraga rutin minimal 3x seminggu.',
@@ -468,15 +628,16 @@ class _MedicalContent extends StatelessWidget {
       ),
       _MedicalHistory(
         id: 'mh2',
+        patientName: 'Noor Lintang Bhaskara',
         title: 'Medical Check-Up Tahunan 2025',
         date: '8 Januari 2025',
         doctor: 'dr. Andi Wijaya, Sp.OK',
         facility: 'Klinik Pratama BBE',
-        result: 'Fit to Work',
-        resultColor: const Color(0xFF4CAF50),
+        mcuStatus: McuStatus.fitWithLimitation,
         notes: 'Hasil pemeriksaan secara keseluruhan baik. Terdapat sedikit '
             'peningkatan kolesterol LDL (145 mg/dL), disarankan mengurangi '
-            'konsumsi makanan berlemak dan rutin berolahraga.',
+            'konsumsi makanan berlemak dan rutin berolahraga. '
+            'Pekerjaan dengan beban berat dibatasi sementara.',
         items: [
           _CheckItem('Pemeriksaan Fisik Umum',    true),
           _CheckItem('Tes Darah Lengkap',         true),
@@ -490,16 +651,17 @@ class _MedicalContent extends StatelessWidget {
       ),
       _MedicalHistory(
         id: 'mh3',
+        patientName: 'Noor Lintang Bhaskara',
         title: 'Pemeriksaan Pasca Insiden K3',
         date: '15 Juli 2024',
         doctor: 'dr. Sari Dewi',
         facility: 'RS Umum Balikpapan',
-        result: 'Perlu Tindak Lanjut',
-        resultColor: const Color(0xFFFF9800),
+        mcuStatus: McuStatus.notFitToWork,
         notes: 'Pasien mengalami cedera ringan pada pergelangan tangan kiri '
             'akibat insiden kerja. Hasil rontgen tidak menunjukkan fraktur. '
             'Diberikan perban dan obat antiinflamasi. Disarankan istirahat '
-            'selama 3 hari dan kontrol ulang 1 minggu kemudian.',
+            'selama 3 hari dan kontrol ulang 1 minggu kemudian. '
+            'Dinyatakan tidak layak bekerja sampai pemulihan selesai.',
         items: [
           _CheckItem('Pemeriksaan Fisik',        true),
           _CheckItem('Rontgen Pergelangan Tangan',true),
@@ -509,12 +671,12 @@ class _MedicalContent extends StatelessWidget {
       ),
       _MedicalHistory(
         id: 'mh4',
+        patientName: 'Noor Lintang Bhaskara',
         title: 'Medical Check-Up Tahunan 2024',
         date: '5 Februari 2024',
         doctor: 'dr. Andi Wijaya, Sp.OK',
         facility: 'Klinik Pratama BBE',
-        result: 'Fit to Work',
-        resultColor: const Color(0xFF4CAF50),
+        mcuStatus: McuStatus.fitToWork,
         notes: 'Semua parameter dalam batas normal. Kondisi kesehatan umum baik.',
         items: [
           _CheckItem('Pemeriksaan Fisik Umum',    true),
@@ -597,6 +759,39 @@ class _MedicalContent extends StatelessWidget {
   }
 }
 
+// ── Medical fitment status enum ──────────────────────────────────────────────
+enum McuStatus {
+  fitToWork,
+  fitWithLimitation,
+  notFitToWork,
+}
+
+extension McuStatusInfo on McuStatus {
+  String get label {
+    switch (this) {
+      case McuStatus.fitToWork:        return 'Fit to Work';
+      case McuStatus.fitWithLimitation: return 'Fit with Limitation';
+      case McuStatus.notFitToWork:     return 'Not Fit to Work';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case McuStatus.fitToWork:        return const Color(0xFF4CAF50); // Hijau
+      case McuStatus.fitWithLimitation: return const Color(0xFFFF9800); // Oranye
+      case McuStatus.notFitToWork:     return const Color(0xFFF44336); // Merah
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case McuStatus.fitToWork:        return Icons.check_circle_outline;
+      case McuStatus.fitWithLimitation: return Icons.warning_amber_outlined;
+      case McuStatus.notFitToWork:     return Icons.cancel_outlined;
+    }
+  }
+}
+
 // ── Medical history model ─────────────────────────────────────────────────────
 class _CheckItem {
   final String label;
@@ -606,23 +801,23 @@ class _CheckItem {
 
 class _MedicalHistory {
   final String id;
+  final String patientName;
   final String title;
   final String date;
   final String doctor;
   final String facility;
-  final String result;
-  final Color resultColor;
+  final McuStatus mcuStatus;
   final String notes;
   final List<_CheckItem> items;
 
   const _MedicalHistory({
     required this.id,
+    required this.patientName,
     required this.title,
     required this.date,
     required this.doctor,
     required this.facility,
-    required this.result,
-    required this.resultColor,
+    required this.mcuStatus,
     required this.notes,
     required this.items,
   });
@@ -635,6 +830,7 @@ class _MedicalHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = history.mcuStatus;
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -655,11 +851,10 @@ class _MedicalHistoryCard extends StatelessWidget {
             Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                color: history.resultColor.withOpacity(0.1),
+                color: status.color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.medical_services_outlined,
-                  color: history.resultColor, size: 22),
+              child: Icon(status.icon, color: status.color, size: 22),
             ),
             const SizedBox(width: 12),
 
@@ -694,19 +889,23 @@ class _MedicalHistoryCard extends StatelessWidget {
 
             const SizedBox(width: 8),
 
-            // Result badge + chevron
+            // MCU status badge + chevron
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: history.resultColor,
+                    color: status.color,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(history.result,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(status.icon, size: 10, color: Colors.white),
+                    const SizedBox(width: 4),
+                    Text(status.label,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+                  ]),
                 ),
                 const SizedBox(height: 6),
                 Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 18),
@@ -775,27 +974,33 @@ class _MedicalDetailScreen extends StatelessWidget {
                     ),
                   ]),
                   const SizedBox(height: 14),
+                  // ── Nama Pasien ────────────────────────────────────────
+                  _HeaderRow(Icons.person_outline, 'Pasien', history.patientName),
+                  const SizedBox(height: 6),
                   _HeaderRow(Icons.calendar_today_outlined, 'Tanggal', history.date),
                   const SizedBox(height: 6),
-                  _HeaderRow(Icons.person_outline,          'Dokter',  history.doctor),
+                  _HeaderRow(Icons.medical_information_outlined, 'Dokter',  history.doctor),
                   const SizedBox(height: 6),
-                  _HeaderRow(Icons.local_hospital_outlined, 'Fasilitas',history.facility),
-                  const SizedBox(height: 14),
-                  // Result badge
+                  _HeaderRow(Icons.local_hospital_outlined, 'Fasilitas', history.facility),
+                  const SizedBox(height: 16),
+                  // ── MCU Status ─────────────────────────────────────────
+                  const Text('Status Kelaikan Kerja:',
+                      style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 8),
                   Row(children: [
-                    const Text('Hasil:', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    _McuStatusChip(
+                      status: McuStatus.fitToWork,
+                      isSelected: history.mcuStatus == McuStatus.fitToWork,
+                    ),
                     const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: history.resultColor,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [BoxShadow(
-                            color: Colors.black.withOpacity(0.15), blurRadius: 4)],
-                      ),
-                      child: Text(history.result,
-                          style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                    _McuStatusChip(
+                      status: McuStatus.fitWithLimitation,
+                      isSelected: history.mcuStatus == McuStatus.fitWithLimitation,
+                    ),
+                    const SizedBox(width: 8),
+                    _McuStatusChip(
+                      status: McuStatus.notFitToWork,
+                      isSelected: history.mcuStatus == McuStatus.notFitToWork,
                     ),
                   ]),
                 ],
@@ -929,6 +1134,42 @@ class _SectionCard extends StatelessWidget {
   );
 }
 
+class _McuStatusChip extends StatelessWidget {
+  final McuStatus status;
+  final bool isSelected;
+  const _McuStatusChip({required this.status, required this.isSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isSelected ? status.color.withOpacity(0.2) : Colors.transparent,
+        border: Border.all(
+          color: isSelected ? status.color : Colors.white24,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(status.icon,
+              size: 14, color: isSelected ? status.color : Colors.white60),
+          const SizedBox(width: 4),
+          Text(
+            status.label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? status.color : Colors.white60,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // APP TAB
@@ -1108,8 +1349,19 @@ class _SettingsTab extends StatelessWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('is_logged_in', false);
+              
+              if (!context.mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange, foregroundColor: Colors.white),
             child: const Text('Logout'),
           ),
         ],

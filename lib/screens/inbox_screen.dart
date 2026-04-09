@@ -165,9 +165,9 @@ class _InboxScreenState extends State<InboxScreen> {
 
   Color _statusColor(ReportStatus s) {
     switch (s) {
-      case ReportStatus.open:       return const Color(0xFF4CAF50);
-      case ReportStatus.inProgress: return const Color(0xFFFF9800);
-      case ReportStatus.closed:     return const Color(0xFFF44336);
+      case ReportStatus.open:       return const Color(0xFF2196F3); // Biru
+      case ReportStatus.inProgress: return const Color(0xFF9C27B0); // Ungu
+      case ReportStatus.closed:     return const Color(0xFF757575); // Abu
     }
   }
 

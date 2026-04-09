@@ -31,9 +31,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       };
 
   Color _statusColor(ReportStatus s) => switch (s) {
-        ReportStatus.open => const Color(0xFF4CAF50),
-        ReportStatus.inProgress => const Color(0xFFFF9800),
-        ReportStatus.closed => const Color(0xFF757575),
+        ReportStatus.open       => const Color(0xFF2196F3), // Biru
+        ReportStatus.inProgress => const Color(0xFF9C27B0), // Ungu
+        ReportStatus.closed     => const Color(0xFF757575), // Abu
       };
 
   IconData _statusIcon(ReportStatus s) => switch (s) {
@@ -439,9 +439,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         value: _formatDate(_report.createdAt)),
                     const SizedBox(height: 12),
                     _DetailRow(
-                        icon: Icons.report_problem_outlined,
-                        label: 'Tipe',
-                        value: _report.type.label),
+                        icon: Icons.category_outlined,
+                        label: 'Kategori',
+                        value: _report.category?.label ?? _report.type.label),
                   ]),
             ),
 

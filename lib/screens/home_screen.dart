@@ -455,9 +455,9 @@ class _ReportCard extends StatelessWidget {
 
   Color get _statusColor {
     switch (report.status) {
-      case ReportStatus.open:       return const Color(0xFF4CAF50);
-      case ReportStatus.inProgress: return const Color(0xFFFF9800);
-      case ReportStatus.closed:     return const Color(0xFF757575);
+      case ReportStatus.open:       return const Color(0xFF2196F3); // Biru
+      case ReportStatus.inProgress: return const Color(0xFF9C27B0); // Ungu
+      case ReportStatus.closed:     return const Color(0xFF757575); // Abu
     }
   }
 

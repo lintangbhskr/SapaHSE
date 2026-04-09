@@ -2,6 +2,19 @@ enum ReportType { hazard, inspection }
 enum ReportSeverity { low, medium, high }
 enum ReportStatus { open, inProgress, closed }
 
+// Sub-kategori hazard / inspection
+enum HazardCategory {
+  unsafeAct,
+  unsafeCondition,
+  nearMiss,
+  propertyDamage,
+  environmentalHazard,
+  // Inspection types
+  routineInspection,
+  electricalInspection,
+  equipmentInspection,
+}
+
 // Sub-status per kategori utama
 enum ReportSubStatus {
   // Open
@@ -23,6 +36,7 @@ class Report {
   final String title;
   final String description;
   final ReportType type;
+  final HazardCategory? category;
   final ReportSeverity severity;
   final ReportStatus status;
   final ReportSubStatus? subStatus;
@@ -36,6 +50,7 @@ class Report {
     required this.title,
     required this.description,
     required this.type,
+    this.category,
     required this.severity,
     required this.status,
     this.subStatus,
@@ -51,6 +66,21 @@ extension ReportTypeLabel on ReportType {
     switch (this) {
       case ReportType.hazard:     return 'Hazard';
       case ReportType.inspection: return 'Inspection';
+    }
+  }
+}
+
+extension HazardCategoryLabel on HazardCategory {
+  String get label {
+    switch (this) {
+      case HazardCategory.unsafeAct:            return 'Unsafe Act';
+      case HazardCategory.unsafeCondition:       return 'Unsafe Condition';
+      case HazardCategory.nearMiss:              return 'Near Miss';
+      case HazardCategory.propertyDamage:        return 'Property Damage';
+      case HazardCategory.environmentalHazard:   return 'Environmental Hazard';
+      case HazardCategory.routineInspection:     return 'Routine Inspection';
+      case HazardCategory.electricalInspection:  return 'Electrical Inspection';
+      case HazardCategory.equipmentInspection:   return 'Equipment Inspection';
     }
   }
 }

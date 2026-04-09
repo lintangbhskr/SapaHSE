@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import '../main.dart';
 
@@ -35,6 +36,19 @@ class _LoginScreenState extends State<LoginScreen>
       CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut),
     );
     _animCtrl.forward();
+    _loadSavedNIK();
+  }
+
+  Future<void> _loadSavedNIK() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedNIK = prefs.getString('saved_nik') ?? '';
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+    if (rememberMe && mounted) {
+      setState(() {
+        _nikCtrl.text = savedNIK;
+        _rememberMe = rememberMe;
+      });
+    }
   }
 
   @override
@@ -56,6 +70,19 @@ class _LoginScreenState extends State<LoginScreen>
 
     // Dummy validation
     if (_nikCtrl.text == '123' && _passCtrl.text == '123') {
+      // Save state
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe) {
+        await prefs.setString('saved_nik', _nikCtrl.text);
+        await prefs.setBool('remember_me', true);
+        await prefs.setBool('is_logged_in', true);
+      } else {
+        await prefs.remove('saved_nik');
+        await prefs.setBool('remember_me', false);
+        await prefs.remove('is_logged_in');
+      }
+
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
@@ -181,8 +208,8 @@ class _LoginScreenState extends State<LoginScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ── NIK field ──────────────────────────────────
-                          _buildLabel('NIK'),
+                          // ── Employee id / NIK field ───────────────────
+                          _buildLabel('Employee id / NIK'),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _nikCtrl,
@@ -196,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen>
                               return null;
                             },
                             decoration: _inputDecoration(
-                              hint: 'Masukkan NIK Anda',
+                              hint: 'Masukkan ID Karyawan / NIK',
                               prefixIcon: Icons.badge_outlined,
                             ),
                           ),
@@ -332,7 +359,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Demo: NIK = 123 | Password = 123',
+                                    'Demo: Employee ID / NIK = 123 | Password = 123',
                                     style: TextStyle(
                                         fontSize: 11, color: Colors.grey),
                                   ),
@@ -402,7 +429,8 @@ class _LoginScreenState extends State<LoginScreen>
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: _inputDecoration(
-                  hint: 'Masukkan NIK', prefixIcon: Icons.badge_outlined),
+                  hint: 'Masukkan ID Karyawan / NIK',
+                  prefixIcon: Icons.badge_outlined),
             ),
           ],
         ),
